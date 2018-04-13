@@ -1,0 +1,19 @@
+{
+  "name": "twiz-client-oauth",
+  "version": "1.0.0",
+  "description": "Twitter OAuth 1.0a strings assembler for twiz-client",
+  "main": "src/OAuth.js",
+  "scripts": {
+    "test": "tap -Rspec --cov test/*.js"
+  },
+  "author": "github.com/gits2501",
+  "license": "MIT",
+  "dependencies": {
+    "twiz-client-options": "file:../twiz-client-options",
+    "twiz-client-utils": "file:../twiz-client-utils"
+  },
+  "devDependencies": {
+    "btoa": "^1.2.1",
+    "tap": "^11.1.3"
+  }
+}
