@@ -1,6 +1,5 @@
 var test = require('tap').test;
 var OAuth = require('../src/OAuth');
-console.log(OAuth);
 var oa = new OAuth();
 
  
@@ -73,8 +72,8 @@ test('set general OAuth params', function(t){ // sets oauth params needed for ev
 
     oa.setUserParams(args); 
    
-    oa.setNonUserParams();   console.log(oa)
-    console.log(typeof (oa.oauth.oauth_timestamp/1000))
+    oa.setNonUserParams();  
+    
     t.ok(typeof oa.oauth[oa.prefix + 'signature_method'] === 'string', 'signature_method');
     t.ok(oa.oauth[oa.prefix + 'nonce'].length === 42, 'nonce - length 42 chars');
     t.ok(typeof(oa.oauth[oa.prefix + 'timestamp']/10000) === 'number', 'timestamp');
@@ -202,7 +201,6 @@ test('add Query Parameters (request token leg  + api call)', function(t){
    t.deepEquals(qp, mockQp, '(request token) + (api) query params')
    
 
-   console.log(oa.options)
 
 })
 

@@ -35,7 +35,7 @@ else btoa = require('btoa');         // in node require node implementation of b
       
       this.OAuthParams = function(action, o1, o2){      // Props found in o2 adds or removes from o1
           Object.getOwnPropertyNames(o2)
-                  .map(function(key, i){
+                  .map(function(key){
                        if(action === 'add') o1[key] = o2[key]; // add property name and value from o2 to o1
                        else delete o1[key];                    // removes property name we found in o2 from o1 
                    })
@@ -121,13 +121,12 @@ else btoa = require('btoa');         // in node require node implementation of b
                 value = "";             // Sensitive data we leave for server to add
               break;   
               case "oauth_signature":
-                continue;              // We dont add signature to singatureBaseString at all
-              break;
+                continue;              // We dont add signature to singatureBaseString at all (notice no break)
               default:
                 value = this.oauth[key];          // Takes value of that key
             }
             pair = percentEncode(key) + "=" + percentEncode(value); // Encodes key value and inserts "="
-          console.log(pair)                                         // in between.
+            //console.log(pair)                                     // in between.
             if(i !== a.length - 1) pair += "&"; // Dont append "&" on last pair    
             this.signatureBaseString += pair;   // Add pair to SBS
          } 
@@ -150,7 +149,6 @@ else btoa = require('btoa');         // in node require node implementation of b
          }
          // Finaly we assemble the sbs string. PercentEncoding again the signature base string.
          this.signatureBaseString = method + url + percentEncode(this.signatureBaseString);
-     //    console.log("SBS string: "+ this.signatureBaseString); 
         return this.signatureBaseString;
    }
 
@@ -163,7 +161,7 @@ else btoa = require('btoa');         // in node require node implementation of b
       for(var name in this.oauth){
           a.push(name);
       }
-      console.log("a; " + a);
+      //console.log("a; " + a);
       a.sort();                           // Aphabeticaly sort array of property names
 
       var headerString = this.leadPrefix; // Adding "OAuth " in front everthing
@@ -185,12 +183,11 @@ else btoa = require('btoa');         // in node require node implementation of b
 
           headerString += pair;       
       } 
-     // console.log("AHS string: " + headerString); 
       return headerString;
    }
 
    OAuth.prototype.appendToCallback = function(data, name){ // appends data object as querystring to                                                                         // oauth_callback url. 
-      console.log('Data: ==> ', data)
+      //console.log('Data: ==> ', data)
       if(!name) name = "data";
       var callback = this.oauth[ this.prefix + 'callback'];
       var fEncoded = formEncode(data, true);
