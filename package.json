@@ -1,0 +1,31 @@
+{
+  "name": "twiz-client-oauth",
+  "version": "1.0.0",
+  "description": "Twitter OAuth 1.0a strings assembler for twiz-client",
+  "main": "src/OAuth.js",
+  "scripts": {
+    "lint": "eslint src/OAuth.js",
+    "tap": "tap -Rspec test/*.js",
+    "test": "nyc npm run tap && nyc report --reporter=text-lcov | coveralls",
+    "testLocal": "nyc npm run tap && nyc report --reporter=text-lcov"
+  },
+  "author": "github.com/gits2501",
+  "license": "MIT",
+  "dependencies": {
+    "twiz-client-options": "https://github.com/gits2501/twiz-client-options",
+    "twiz-client-utils": "https://github.com/gits2501/twiz-client-utils"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gits2501/twiz-client-oauth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gits2501/twiz-client-oauth/issues"
+  },
+  "devDependencies": {
+    "btoa": "^1.2.1",
+    "eslint": "^4.19.1",
+    "nyc": "^11.7.3",
+    "tap": "^11.1.3"
+  }
+}
