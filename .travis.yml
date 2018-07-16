@@ -4,6 +4,8 @@ node_js:
   - '8.6.0'
 git:
   depth: 3
+after_success: 'npm run coveralls'
 cache:
   directories:
     - "node_modules"
+
