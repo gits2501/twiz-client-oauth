@@ -1,2 +1,2 @@
-# twiz-client-oauth
-Twitter OAuth 1.0a authentication module (used in twiz-client) 
+# twiz-client-oauth [![Build Status](https://travis-ci.org/gits2501/twiz-client-oauth.svg?branch=master)](https://travis-ci.org/gits2501/twiz-client-oauth) [![Coverage Status](https://coveralls.io/repos/github/gits2501/twiz-client-oauth/badge.svg?branch=master)](https://coveralls.io/github/gits2501/twiz-client-oauth?branch=master)
+Twitter OAuth 1.0a authentication module (used in [twiz-client](https://github.com/gist2501/twiz-client)) 

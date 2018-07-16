@@ -1,10 +1,8 @@
 var Options       = require('twiz-client-options');
 var percentEncode = require('twiz-client-utils').percentEncode;
 var formEncode    = require('twiz-client-utils').formEncode; 
-var btoa;
+var btoa          = window.btoa  // use browser's btoa 
 
-if(typeof window === 'object' && window != null) btoa = window.btoa; 
-else btoa = require('btoa');         // in node require node implementation of browser's btoa (used when testing)
 
    function OAuth(){                 // Prepares oauth strings for a request
       Options.call(this);

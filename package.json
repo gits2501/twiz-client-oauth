@@ -5,9 +5,12 @@
   "main": "src/OAuth.js",
   "scripts": {
     "lint": "eslint src/OAuth.js",
-    "tap": "tap -Rspec test/*.js",
-    "test": "nyc npm run tap && nyc report --reporter=text-lcov | coveralls",
-    "testLocal": "nyc npm run tap && nyc report --reporter=text-lcov"
+    "instrument": "istanbul instrument src/OAuth.js --output src/oauth_instrumented.js",
+    "browserify": "./node_modules/browserify/bin/cmd.js test/oauth.js -o test/oauth_bundle.js",
+    "mocha-headless": "mocha-headless-chrome -a no-sandbox -f mocha-test.html -c test/coverage.json",
+    "report": "istanbul report --root test/ lcov",
+    "coveralls": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "test": "npm run instrument && npm run browserify && npm run mocha-headless && npm run report"
   },
   "author": "github.com/gits2501",
   "license": "MIT",
@@ -17,15 +20,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gits2501/twiz-client-oauth.git"
+    "url": "twiz-client-oauth.git"
   },
   "bugs": {
     "url": "https://github.com/gits2501/twiz-client-oauth/issues"
   },
   "devDependencies": {
-    "btoa": "^1.2.1",
+    "browserify": "^16.2.2",
+    "coveralls": "^3.0.2",
     "eslint": "^4.19.1",
-    "nyc": "^11.7.3",
-    "tap": "^11.1.3"
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0",
+    "mocha-headless-chrome": "^2.0.1"
   }
-}
+} 

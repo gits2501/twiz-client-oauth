@@ -1,8 +1,6 @@
-var test = require('tap').test;
-var OAuth = require('../src/OAuth');
-var oa = new OAuth();
+var OAuth = require('../src/oauth_instrumented.js');
+var assert     = require('assert');
 
- 
 var mockOAuth = { 
 
   leadPrefix: 'OAuth ',
@@ -22,22 +20,9 @@ var mockOAuth = {
   apiCall: { oauth_token: '' }
   
 }
-
-test('OAuth parts',function(t){
-    t.plan(6);
-
-    t.equals(oa.leadPrefix, mockOAuth.leadPrefix, 'lead header prefix');
-    t.equals(oa.prefix, mockOAuth.prefix, 'parameter header prefix');
-
-    t.deepEquals(oa.oauth, mockOAuth.oauth, 'basic oauth params');
-    t.deepEquals(oa[oa.leg[0]], mockOAuth.request_token, 'oauth params for request token leg');
-    t.deepEquals(oa[oa.leg[2]], mockOAuth.access_token, 'oauth params for access token leg');
-    t.deepEquals(oa.apiCall, mockOAuth.apiCall, 'oauth params for twitter api calls (after oauth)');
-
-     
-})
-
- var userOptions = {
+var mockNonce = 'ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ';
+var mockTimestamp = '1523528027'
+var userOptions = {
     method: 'POST',
     path:'statuses/update.json',
     params:{
@@ -66,219 +51,397 @@ test('OAuth parts',function(t){
       
  };
 
-test('set general OAuth params', function(t){ // sets oauth params needed for every oauth leg (step)
+var oa;
+beforeEach(function(){
+  oa = new OAuth();
+})
+
+describe('OAuth parts',function(){
+
+   it('lead header prefix',function(){
+      assert.equal(oa.leadPrefix, mockOAuth.leadPrefix);
+   })
+   it('parameter header prefix', function(){
+      assert.equal(oa.prefix, mockOAuth.prefix);
+   })
    
-    t.plan(6);
+   it('basic oauth params', function(){
+     assert.deepEqual(oa.oauth, mockOAuth.oauth);
+   })
+
+   it('oauth params for request token leg', function(){
+     assert.deepEqual(oa[oa.leg[0]], mockOAuth.request_token);
+   })
+ 
+   it('oauth params for access token leg', function(){
+     assert.deepEqual(oa[oa.leg[2]], mockOAuth.access_token);
+   })
+
+   it('oauth params for twitter api calls (after oauth)', function(){
+     assert.deepEqual(oa.apiCall, mockOAuth.apiCall);
+   })
+ 
+     
+})
+
+ 
+describe('set general OAuth params', function(){ // sets oauth params needed for every oauth leg (step)
+   
+
+   
+   
+  it('signature_method', function(){ 
+     oa.setUserParams(args); 
+     oa.setNonUserParams();  
+
+    assert.ok(typeof oa.oauth[oa.prefix + 'signature_method'] === 'string');
+  })
+
+  it('nonce - length 42 chars', function(){
+     oa.setNonUserParams(); 
+     assert.ok(oa.oauth[oa.prefix + 'nonce'].length === 42);
+  })
+ 
+  it('timestamp', function(){
+    assert.ok(typeof(oa.oauth[oa.prefix + 'timestamp']/10000) === 'number');
+  })
+
+  it('version', function(){
+    assert.ok(typeof(oa.oauth[oa.prefix + 'version']/1) === 'number');
+  })
+  
+  it('consumer_key = \'\'', function(){
+    assert.equal(oa.oauth[oa.prefix + 'consumer_key'], '');
+  })
+
+  it('signature = \'\'', function(){
+    assert.equal(oa.oauth[oa.prefix + 'signature'], '');
+  })
+})
+
+describe('request token OAuth params',function(){ // check request token params
+    
+  it('oauth_callback', function(){   
 
     oa.setUserParams(args); 
+    assert.ok(oa[oa.leg[0]].oauth_callback);
+  })
+})
+
+describe('access token OAuth params', function(){  // check access token params
+    
+   it('oauth_token', function(){
+     assert.ok(oa[oa.leg[2]].hasOwnProperty('oauth_token'));
+   })
+
+   it('oauth_verifier', function(){
+     assert.ok(oa[oa.leg[2]].hasOwnProperty('oauth_verifier'));
+   })
+    
+})
+
+describe('api call OAuth params', function(){  // check api call params
+    
+   it('oauth_token', function(){
+     assert.ok(oa.apiCall.hasOwnProperty('oauth_token'));
+   })
+    
+})
+
+describe('add request token params to OAuth', function(){
+
+
    
-    oa.setNonUserParams();  
+   it('oauth_callback' , function(){
+     oa.setUserParams(args); 
+     oa.setNonUserParams();
+     oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]]); // add request token params to oauth
     
-    t.ok(typeof oa.oauth[oa.prefix + 'signature_method'] === 'string', 'signature_method');
-    t.ok(oa.oauth[oa.prefix + 'nonce'].length === 42, 'nonce - length 42 chars');
-    t.ok(typeof(oa.oauth[oa.prefix + 'timestamp']/10000) === 'number', 'timestamp');
-    t.ok(typeof(oa.oauth[oa.prefix + 'version']/1) === 'number', 'version');
-  
-    t.equals(oa.oauth[oa.prefix + 'consumer_key'], '', 'consumer_key = \'\'');
-    t.equals(oa.oauth[oa.prefix + 'signature'], '', 'signature = \'\'');
+     assert.ok(oa.oauth['oauth_callback'])
+   })
 })
 
-test('request token OAuth params',function(t){ // check request token params
-    
-    t.plan(1);
-    
-    t.ok(oa[oa.leg[0]].oauth_callback, 'oauth_callback');
-})
+describe('add access token params to OAuth', function(){
 
-test('access token OAuth params', function(t){  // check access token params
-    
-    t.plan(2);
-
-    t.ok(oa[oa.leg[2]].hasOwnProperty('oauth_token'),'oauth_token');
-    t.ok(oa[oa.leg[2]].hasOwnProperty('oauth_verifier'),'oauth_verifier');
-    
-})
-
-test('api call OAuth params', function(t){  // check api call params
-    
-    t.plan(1);
-
-    t.ok(oa.apiCall.hasOwnProperty('oauth_token'),'oauth_token');
-    
-})
-
-test('add request token params to OAuth', function(t){
-
-    t.plan(1);
-
-    oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]]); // add request token params to oauth
-    t.ok(oa.oauth['oauth_callback'], 'oauth_callback')
-})
-
-test('add access token params to OAuth', function(t){
-
-    t.plan(3);
      
-    oa.OAuthParams('remove', oa.oauth, oa[oa.leg[0]]) // remove oauth_callback
-    t.notOk(oa.oauth.hasOwnProperty('oauth_callback'), ' removed - oauth_callback');
+   it(' removed - oauth_callback', function(){
+      
+      oa.setUserParams(args);
+      oa.setNonUserParams();
+      
+      oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]]); // add request token params to oauth
+      oa.OAuthParams('remove', oa.oauth, oa[oa.leg[0]]) // remove oauth_callback
+
+      assert.ok(!oa.oauth.hasOwnProperty('oauth_callback'));
+   })
+   
+  
+   it('oauth_token', function(){ 
+     oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]]); // add request token params to oauth
+     assert.ok(oa.oauth.hasOwnProperty('oauth_token'));
+   })
+   
+   it('oauth_verifier', function(){
+     oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]]); // add request token params to oauth
+     assert.ok(oa.oauth.hasOwnProperty('oauth_verifier'));
+   })
+})
+
+describe('add Query String parametars (request_token leg)', function(){
+ 
+   var mockQp 
+   var qp;  
+   
+   before(function(){
+     mockQp = {            // mock query params object
+       legHost: 'api.twitter.com',
+       legPath: '/oauth/request_token',
+       legMethod: 'POST',
+       legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%253Fdata%253Did%25253D342%252526data%25253Duser%25252520data%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
+       legAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl%3Fdata%3Did%253D342%2526data%253Duser%252520data", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"' }
+
+
+      oa.setUserParams(args);
+      oa.setNonUserParams();
+      oa.OAuthParams('remove', oa.oauth, oa[oa.leg[2]]) // remove token and verifier params
+      oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]])    // add oauth_callback
+  
+      oa.setRequestOptions(oa.leg[0]);
+
+   
+      oa.oauth.oauth_nonce = "ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ"; // set nonce so it doesnt change 
+                                                                        // (needs to be tested with assert.equal())
+      oa.oauth.oauth_timestamp = '1523528027';                             // set timestamp so it doesnt change
+
+      oa.addQueryParams('leg', oa.leg[0]) // add query params for request token leg
+
+      qp = oa.options.queryParams;
+   })
+
+   it('(leg) Host', function(){ 
+
+       assert.equal(qp.legHost, mockQp.legHost);
+   })
+
+   it('(leg) Path', function(){
+     assert.equal(qp.legPath, mockQp.legPath);
+   })
+
+   it('(leg) Method', function(){
+     assert.equal(qp.legMethod, mockQp.legMethod);
+   })
+   
+
+   it('(leg) Signature Base String - with session data', function(){
+      assert.equal(qp.legSBS, mockQp.legSBS) 
+   })
+ 
+   it('(leg) Authorization Header String', function(){
+      assert.equal(qp.legAH, mockQp.legAH)
+   })
+  
+
+   
+   
+   it('(leg) Signature Base String', function(){
+      oa.setUserParams(args);
+      oa.setNonUserParams();
+      oa.oauth.oauth_nonce = mockNonce;         
+      oa.oauth.oauth_timestamp = mockTimestamp;
+
+      mockQp.legSBS = 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0';
+   
+      oa.session_data = '';                            // prepare for testing SBS with no session data
+      oa.oauth.oauth_callback = args.redirection_url // reseting redir url so it doesnt contain session data
+   
+      oa.addQueryParams('leg', oa.leg[0]) // set again params so it can regenerate SBS without session data
+      oa.setRequestOptions(oa.leg[0]);
+      
+      qp = oa.options.queryParams;
+
+      assert.equal(qp.legSBS, mockQp.legSBS); 
+   })
+   
+}) 
+
+describe('add Query Parameters (request token leg  + api call)', function(){
+ var mockQp;
+ var qp;
+
+ before(function(){ 
+    mockQp = {                 // mock request token and api call params
+      legHost: 'api.twitter.com',
+      legPath: '/oauth/request_token',
+      legMethod: 'POST',
+      legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
+      legAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"',
+      apiHost: 'api.twitter.com',
+      apiPath: '/1.1/statuses/update.json?status=A%20bug%20walks%20carelessly.',
+      apiMethod: 'POST',
+      apiSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2F1.1%2Fstatuses%2Fupdate.json&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
+      apiAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"' 
+   }
+
+     oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]]);  // add oauth params for request token leg
+     oa.addQueryParams('api', oa.UserOptions);        // add params needed for api
+     qp = oa.options.queryParams;    
+ 
+   })
+
+   it('(api) Host', function(){
+      assert.equal(qp.apiHost, mockQp.apiHost);
+   })
     
-    oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]]); // add request token params to oauth
-    t.ok(oa.oauth.hasOwnProperty('oauth_token'), 'oauth_token')
-    t.ok(oa.oauth.hasOwnProperty('oauth_verifier'), 'oauth_verifier')
+   it('(api) Path', function(){
+     assert.equal(qp.apiPath, mockQp.apiPath);
+   })
+
+   it('(api) Method', function(){
+     assert.equal(qp.apiMethod, mockQp.apiMethod);
+   })
+
+   it('(api) Signature Base String', function(){   
+     assert.equal(qp.apiSBS, mockQp.apiSBS);
+   })
+  
+   it('(api) Authorization Header String', function(){
+     assert.equal(qp.apiAH, mockQp.apiAH);
+   })
+
+   it('(request token) + (api) query params', function(){
+     assert.deepEqual(qp, mockQp)
+   })
+   
 })
 
-test('add Query String parametars (request_token leg)', function(t){
-    t.plan(6);   
- 
-   var mockQp = {            // mock query params object
-     legHost: 'api.twitter.com',
-     legPath: '/oauth/request_token',
-     legMethod: 'POST',
-     legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%253Fdata%253Did%25253D342%252526data%25253Duser%25252520data%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
-     legAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl%3Fdata%3Did%253D342%2526data%253Duser%252520data", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"' }
+describe('add Query String parametars (access_token leg)', function(){
+   var mockQp;
+   var qp;
 
-   oa.OAuthParams('remove', oa.oauth, oa[oa.leg[2]]) // remove token and verifier params
-   oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]])    // add oauth_callback
+   before(function(){ 
+     mockQp = { 
+        legHost: 'api.twitter.com',
+        legPath: '/oauth/access_token',
+        legMethod: 'POST',
+        legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Faccess_token&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_verifier%3D%26oauth_version%3D1.0',
+        legAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_verifier="", oauth_version="1.0"' 
+
+     }
+     oa.setUserParams(args);
+     oa.setNonUserParams();
+     oa.oauth.oauth_nonce = mockNonce;          // set nonce to the one from mockQp so it doesnt change  
+     oa.oauth.oauth_timestamp = mockTimestamp;  // set timestamp
+
+     oa.OAuthParams('remove', oa.oauth, oa[oa.leg[0]]) // remove callback
+     oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]])    // add token and verifier params
   
-   oa.setRequestOptions(oa.leg[0]);
-
+     oa.setRequestOptions(oa.leg[2]);
    
-   oa.oauth.oauth_nonce = "ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ"; // set nonce so it doesnt change 
-                                                                        // (needs to be tested with t.equals())
-   oa.oauth.oauth_timestamp = '1523528027';                             // set timestamp so it doesnt change
+                               // set timestamp so it doesnt change
 
-   oa.addQueryParams('leg', oa.leg[0]) // add query params for request token leg
+     oa.addQueryParams('leg', oa.leg[2]) // add query params for access token leg
 
-   var qp = oa.options.queryParams;
-   
-   t.equals(qp.legHost, mockQp.legHost,'(leg) Host');
-   t.equals(qp.legPath, mockQp.legPath,'(leg) Path');
-   t.equals(qp.legMethod, mockQp.legMethod,'(leg) Method');
-   
-   // 
-   t.equals(qp.legSBS, mockQp.legSBS, '(leg) Signature Base String - with session data') 
-   t.equals(qp.legAH, mockQp.legAH, '(leg) Authorization Header String')
+
+     qp = oa.options.queryParams;
+   })
   
-
-   mockQp.legSBS = 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0';
-   
-   oa.session_data = ''; // prepare for testing SBS with no session data
-   oa.oauth.oauth_callback = args.redirection_url // reseting redir url so it doesnt contain session data
-   
-   oa.addQueryParams('leg', oa.leg[0]) // set again params so it can regenerate SBS without session data
-   
-   t.equals(qp.legSBS, mockQp.legSBS, '(leg) Signature Base String'); 
-   
-}) 
-
-test('add Query Parameters (request token leg  + api call)', function(t){
-  t.plan(6); 
- 
-  var mockQp = {                 // mock request token and api call params
-     legHost: 'api.twitter.com',
-     legPath: '/oauth/request_token',
-     legMethod: 'POST',
-     legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Frequest_token&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
-     legAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"',
-     apiHost: 'api.twitter.com',
-     apiPath: '/1.1/statuses/update.json?status=A%20bug%20walks%20carelessly.',
-     apiMethod: 'POST',
-     apiSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2F1.1%2Fstatuses%2Fupdate.json&oauth_callback%3Dhttps%253A%252F%252Fmyapp.com%252FredirUrl%26oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_version%3D1.0',
-     apiAH: 'OAuth oauth_callback="https%3A%2F%2Fmyapp.com%2FredirUrl", oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_version="1.0"' 
-   }
-
-   oa.OAuthParams('add', oa.oauth, oa[oa.leg[0]]);  // add oauth params for request token leg
-   oa.addQueryParams('api', oa.UserOptions);        // add params needed for api
-
-   var qp = oa.options.queryParams;    
-   t.equals(qp.apiHost, mockQp.apiHost, '(api) Host');
-   t.equals(qp.apiPath, mockQp.apiPath, '(api) Path');
-   t.equals(qp.apiMethod, mockQp.apiMethod, '(api) Method');
-   
-   t.equals(qp.apiSBS, mockQp.apiSBS, '(api) Signature Base String');
-   t.equals(qp.apiAH, mockQp.apiAH, '(api) Authorization Header String');
-
-   t.deepEquals(qp, mockQp, '(request token) + (api) query params')
-   
-
-
-})
-
-test('add Query String parametars (access_token leg)', function(t){
-   t.plan(5);   
- 
+   it('(leg) Host', function(){ 
+     assert.equal(qp.legHost, mockQp.legHost);
+   })
   
-  var mockQp = { 
-     legHost: 'api.twitter.com',
-     legPath: '/oauth/access_token',
-     legMethod: 'POST',
-     legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Faccess_token&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_verifier%3D%26oauth_version%3D1.0',
-     legAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_verifier="", oauth_version="1.0"' 
+   it('(leg) Path', function(){
+     assert.equal(qp.legPath, mockQp.legPath);
+   })
 
-   }
+   it('(leg) Method', function(){
+     assert.equal(qp.legMethod, mockQp.legMethod);
+   })
 
-   oa.OAuthParams('remove', oa.oauth, oa[oa.leg[0]]) // remove callback
-   oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]])    // add token and verifier params
-  
-   oa.setRequestOptions(oa.leg[2]);
-   
-   oa.oauth.oauth_nonce = "ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ"; // set nonce so it doesnt change 
-                                                                        // (needs to be tested with t.equals())
-   oa.oauth.oauth_timestamp = '1523528027';                             // set timestamp so it doesnt change
+   it('(leg) Signature Base String', function(){ 
+     assert.equal(qp.legSBS, mockQp.legSBS) 
+   })
 
-   oa.addQueryParams('leg', oa.leg[2]) // add query params for access token leg
-
-   var qp = oa.options.queryParams;
-   
-   t.equals(qp.legHost, mockQp.legHost,'(leg) Host');
-   t.equals(qp.legPath, mockQp.legPath,'(leg) Path');
-   t.equals(qp.legMethod, mockQp.legMethod,'(leg) Method');
-   
-   // 
-   t.equals(qp.legSBS, mockQp.legSBS, '(leg) Signature Base String') 
-   t.equals(qp.legAH, mockQp.legAH, '(leg) Authorization Header String')
+   it('(leg) Authorization Header String', function(){
+     assert.equal(qp.legAH, mockQp.legAH);
+   })
   
 }) 
 
-test('add Query String parametars (access_token plus)', function(t){ // test access token and api params
-  t.plan(6);   
- 
-  
-   var mockQp = {               // mocks query params needed for "oauth access token plus" request 
-     legHost: 'api.twitter.com',
-     legPath: '/oauth/access_token',
-     legMethod: 'POST',
-     legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Faccess_token&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_verifier%3D%26oauth_version%3D1.0',
-     legAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_verifier="", oauth_version="1.0"',
-     apiHost: 'api.twitter.com',
-     apiPath: '/1.1/statuses/update.json?status=A%20bug%20walks%20carelessly.',
-     apiMethod: 'POST',
-     apiSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2F1.1%2Fstatuses%2Fupdate.json&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_version%3D1.0',
-    apiAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_version="1.0"' 
-   }
-  
-   oa.OAuthParams('remove', oa.oauth, oa[oa.leg[2]]) // remove  token and verifier params
-   oa.OAuthParams('add', oa.oauth, oa.apiCall)       // add callback
-  
-   oa.setRequestOptions(oa.leg[2]);
-   
-   oa.oauth.oauth_nonce = "ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ"; // set nonce so it doesnt change 
-                                                                      // (sbs needs to be tested with t.equals())
-   oa.oauth.oauth_timestamp = '1523528027';                           // set timestamp so it doesnt change
+describe('add Query String parametars (access_token plus)', function(){ // test access token and api params
+   var mockQp;
+   var qp;
 
-   oa.addQueryParams('api', oa.UserOptions) // add query params for access token leg
-   
-   var qp = oa.options.queryParams
+   before(function(){ 
+      mockQp = {               // mocks query params needed for "oauth access token plus" request 
+        legHost: 'api.twitter.com',
+        legPath: '/oauth/access_token',
+        legMethod: 'POST',
+        legSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2Foauth%2Faccess_token&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_verifier%3D%26oauth_version%3D1.0',
+        legAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_verifier="", oauth_version="1.0"',
+        apiHost: 'api.twitter.com',
+        apiPath: '/1.1/statuses/update.json?status=A%20bug%20walks%20carelessly.',
+        apiMethod: 'POST',
+        apiSBS: 'POST&https%3A%2F%2Fapi.twitter.com%2F1.1%2Fstatuses%2Fupdate.json&oauth_consumer_key%3D%26oauth_nonce%3Dajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1523528027%26oauth_token%3D%26oauth_version%3D1.0',
+        apiAH: 'OAuth oauth_consumer_key="", oauth_nonce="ajdud0QydHRnYU9XeHJ5b29kSGpWdmY2bXAxTTk4VQ", oauth_signature="", oauth_signature_method="HMAC-SHA1", oauth_timestamp="1523528027", oauth_token="", oauth_version="1.0"' 
+      }
+  
+      oa.setUserParams(args);
+      oa.setNonUserParams();
+       
+      oa.oauth.oauth_nonce = mockNonce;                 // set nonce so it doesnt change 
+      oa.oauth.oauth_timestamp = mockTimestamp;         // set timestamp so it doesnt change
 
-   t.equals(qp.apiHost, mockQp.apiHost, '(api) Host');
-   t.equals(qp.apiPath, mockQp.apiPath, '(api) Path');
-   t.equals(qp.apiMethod, mockQp.apiMethod, '(api) Method');
-   
-   t.equals(qp.apiSBS, mockQp.apiSBS, '(api) Signature Base String');
-   t.equals(qp.apiAH, mockQp.apiAH, '(api) Authorization Header String');
+      oa.OAuthParams('remove', oa.oauth, oa[oa.leg[2]]) // remove  token and verifier params
+      oa.OAuthParams('add', oa.oauth, oa.apiCall)       // add callback
+  
+      oa.addQueryParams('api', oa.UserOptions) // add query params for api call
+     
+      oa.setRequestOptions(oa.leg[2]);
 
-   t.deepEquals(qp, mockQp, '(access token) + (api) query params')
+      qp = oa.options.queryParams
+   })
    
+   it('(api) Host', function(){
+     assert.equal(qp.apiHost, mockQp.apiHost);
+   })
+
+   it('(api) Path', function(){
+     assert.equal(qp.apiPath, mockQp.apiPath);
+   })         
+  
+   it('(api) Method', function(){
+     assert.equal(qp.apiMethod, mockQp.apiMethod);
+   })
+   
+   it('(api) Signature Base String', function(){ 
+     assert.equal(qp.apiSBS, mockQp.apiSBS);
+   })
+
+   it('(api) Authorization Header String', function(){
+     assert.equal(qp.apiAH, mockQp.apiAH);
+   })
+
+   before(function(){
+
+      oa.setUserParams(args);
+      oa.setNonUserParams();
+       
+      oa.oauth.oauth_nonce = mockNonce;                 // set nonce so it doesnt change 
+      oa.oauth.oauth_timestamp = mockTimestamp;         // set timestamp so it doesnt change
+
+      oa.OAuthParams('remove', oa.oauth, oa.apiCall)    // remove token
+      oa.OAuthParams('add', oa.oauth, oa[oa.leg[2]])    // add  token and verifier params (access token params)
+  
+      oa.addQueryParams('leg', oa.leg[2])         // add query params for api call
+     
+      oa.setRequestOptions(oa.leg[2]);
+
+      qp = oa.options.queryParams
+   })
+
+   it('(access token) + (api) query params', function(){  
+     assert.deepStrictEqual(qp, mockQp)
+   })
    
 }) 
 
